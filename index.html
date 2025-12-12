@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analytics Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">📊</span>
+                <span class="logo-text">Analytics<span class="pro-badge">PRO</span></span>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <span class="nav-icon">🏠</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span>Statistiques</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span>Utilisateurs</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">💰</span>
+                    <span>Revenus</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Paramètres</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">🔧</span>
+                    <span>Admin</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 class="page-title">Tableau de bord</h1>
+                <div class="top-bar-actions">
+                    <button class="theme-toggle" id="themeToggle">🌙</button>
+                    <div class="notifications-wrapper">
+                        <button class="notifications-btn" id="notificationsBtn">
+                            🔔
+                            <span class="notifications-badge" id="notificationsBadge">5</span>
+                        </button>
+                        <div class="notifications-panel" id="notificationsPanel">
+                            <div class="notifications-header">
+                                <h4>Notifications</h4>
+                                <button class="mark-all-read" id="markAllRead">Tout marquer lu</button>
+                            </div>
+                            <div class="notifications-list" id="notificationsList">
+                                <!-- Notifications injectées en JS -->
+                            </div>
+                            <div class="notifications-footer">
+                                <a href="#">Voir toutes les notifications →</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="user-profile">
+                        <span class="user-name">Olive</span>
+                        <div class="user-avatar">O</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Container pour les pages dynamiques -->
+            <div id="pageContent">
+                <!-- Le contenu sera injecté par JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
