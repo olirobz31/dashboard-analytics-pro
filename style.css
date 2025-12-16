@@ -2369,3 +2369,40 @@ body {
 .avatar-divider span {
     padding: 0 12px;
 }
+
+/* ============================================
+   STATS TREND AMÉLIORATION
+   ============================================ */
+
+.stat-trend-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 70px;
+}
+
+.stat-trend {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.stat-trend-label {
+    font-size: 9px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.stat-trend.negative {
+    color: var(--accent-red);
+}
+
+.stat-percent {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-left: 2px;
+}
+
+.stat-card {
+    min-width: 200px;
+}

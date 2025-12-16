@@ -208,9 +208,14 @@ function initThemeToggle() {
     const html = document.documentElement;
     const savedTheme = localStorage.getItem('dashboard-theme');
     
-    if (savedTheme) {
-        html.setAttribute('data-theme', savedTheme);
-        themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    if (savedTheme === 'auto') {
+        applyAutoTheme();
+    } else if (savedTheme === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        themeToggle.textContent = '☀️';
+    } else {
+        html.removeAttribute('data-theme');
+        themeToggle.textContent = '🌙';
     }
     
     themeToggle.addEventListener('click', () => {
@@ -221,6 +226,26 @@ function initThemeToggle() {
         localStorage.setItem('dashboard-theme', newTheme);
         themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
     });
+    
+    // Écouter les changements du système (si mode auto)
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (localStorage.getItem('dashboard-theme') === 'auto') {
+            applyAutoTheme();
+        }
+    });
+}
+
+function applyAutoTheme() {
+    // Détecter le mode système (clair ou sombre)
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (prefersDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('themeToggle').textContent = '☀️';
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('themeToggle').textContent = '🌙';
+    }
 }
 
 // ============================================
@@ -228,24 +253,52 @@ function initThemeToggle() {
 // ============================================
 
 function applyConfigToUI() {
+    // Récupérer les paramètres sauvegardés
+    const savedSettings = getData('settings') || {};
+    const savedAvatar = localStorage.getItem('dashboard-avatar');
+    const savedAvatarImage = localStorage.getItem('dashboard-avatar-image');
+    const savedAvatarColor = localStorage.getItem('dashboard-avatar-color') || '#3b82f6';
+    
+    // Nom de l'app
     const logoText = document.querySelector('.logo-text');
     if (logoText) {
-        logoText.innerHTML = `${CONFIG.app.name}<span class="pro-badge">${CONFIG.app.badge}</span>`;
+        const appName = savedSettings.appName || CONFIG.app.name;
+        const appBadge = savedSettings.appBadge || CONFIG.app.badge;
+        logoText.innerHTML = `${appName}<span class="pro-badge">${appBadge}</span>`;
     }
     
+    // Icône logo
     const logoIcon = document.querySelector('.logo-icon');
     if (logoIcon) {
         logoIcon.textContent = CONFIG.app.logo;
     }
     
+    // Nom utilisateur
     const userName = document.querySelector('.user-name');
     if (userName) {
-        userName.textContent = CONFIG.user.name;
+        userName.textContent = savedSettings.userName || CONFIG.user.name;
     }
     
+    // Avatar utilisateur
     const userAvatar = document.querySelector('.user-avatar');
     if (userAvatar) {
-        userAvatar.textContent = CONFIG.user.avatar;
+        if (savedAvatarImage) {
+            userAvatar.style.background = `url(${savedAvatarImage}) center/cover`;
+            userAvatar.textContent = '';
+        } else if (savedAvatar) {
+            userAvatar.style.background = savedAvatarColor;
+            userAvatar.textContent = savedAvatar;
+        } else {
+            const firstLetter = savedSettings.userName ? savedSettings.userName.charAt(0).toUpperCase() : CONFIG.user.avatar;
+            userAvatar.style.background = savedAvatarColor;
+            userAvatar.textContent = firstLetter;
+        }
+    }
+    
+    // Appliquer la couleur principale sauvegardée
+    const savedColor = localStorage.getItem('dashboard-color');
+    if (savedColor) {
+        applyColor(savedColor);
     }
 }
 
@@ -499,41 +552,11 @@ const pages = {
                 <div class="settings-card-body">
                     <div class="toggle-group">
                         <div class="toggle-info">
-                            <span class="toggle-label">Notifications email</span>
-                            <span class="toggle-desc">Recevoir les alertes par email</span>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="toggle-group">
-                        <div class="toggle-info">
                             <span class="toggle-label">Nouvelles commandes</span>
-                            <span class="toggle-desc">Notification à chaque vente</span>
+                            <span class="toggle-desc">Afficher les notifications de ventes</span>
                         </div>
                         <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <span class="toggle-label">Rapports hebdomadaires</span>
-                            <span class="toggle-desc">Résumé chaque lundi</span>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="toggle-group">
-                        <div class="toggle-info">
-                            <span class="toggle-label">Alertes de stock</span>
-                            <span class="toggle-desc">Prévenir quand stock bas</span>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
+                            <input type="checkbox" id="notifOrdersToggle" checked>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -573,24 +596,27 @@ const pages = {
                     </div>
                 </div>
             </section>
-            <section class="settings-card danger-zone">
+            <section class="settings-card">
                 <div class="settings-card-header">
-                    <h3>⚠️ Zone de danger</h3>
+                    <h3>💾 Sauvegarde</h3>
                 </div>
                 <div class="settings-card-body">
                     <div class="danger-item">
                         <div>
                             <span class="danger-title">Exporter les données</span>
-                            <span class="danger-desc">Télécharger toutes vos données</span>
+                            <span class="danger-desc">Télécharger toutes vos données en JSON</span>
                         </div>
-                        <button class="secondary-btn">Exporter</button>
+                        <button class="secondary-btn" id="exportDataBtn">📥 Exporter</button>
                     </div>
                     <div class="danger-item">
                         <div>
-                            <span class="danger-title">Supprimer le compte</span>
-                            <span class="danger-desc">Action irréversible</span>
+                            <span class="danger-title">Importer les données</span>
+                            <span class="danger-desc">Restaurer depuis un fichier JSON</span>
                         </div>
-                        <button class="danger-btn">Supprimer</button>
+                        <label class="secondary-btn import-btn">
+                            📤 Importer
+                            <input type="file" id="importDataInput" accept=".json" hidden>
+                        </label>
                     </div>
                 </div>
             </section>
@@ -976,28 +1002,104 @@ function renderStatsCards() {
     const orders = getData('orders') || [];
     const users = getData('users') || [];
     
-    const completedOrders = orders.filter(o => o.status === 'completed');
-    let totalRevenue = 0;
-    completedOrders.forEach(o => {
-        const amount = Number(o.amount);
-        if (!isNaN(amount)) totalRevenue += amount;
+    // Dates pour comparaison
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+    
+    // Filtrer les commandes par mois
+    const thisMonthOrders = orders.filter(o => {
+        const d = new Date(o.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear && o.status === 'completed';
     });
     
+    const lastMonthOrders = orders.filter(o => {
+        const d = new Date(o.date);
+        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear && o.status === 'completed';
+    });
+    
+    // Calculs ce mois
+    let thisMonthRevenue = 0;
+    thisMonthOrders.forEach(o => {
+        const amount = Number(o.amount);
+        if (!isNaN(amount)) thisMonthRevenue += amount;
+    });
+    
+    // Calculs mois dernier
+    let lastMonthRevenue = 0;
+    lastMonthOrders.forEach(o => {
+        const amount = Number(o.amount);
+        if (!isNaN(amount)) lastMonthRevenue += amount;
+    });
+    
+    // Utilisateurs ce mois vs mois dernier
+    const thisMonthUsers = users.filter(u => {
+        const d = new Date(u.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+    }).length;
+    
+    const lastMonthUsers = users.filter(u => {
+        const d = new Date(u.date);
+        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+    }).length;
+    
+    // Commandes ce mois vs mois dernier
+    const thisMonthOrdersCount = thisMonthOrders.length;
+    const lastMonthOrdersCount = lastMonthOrders.length;
+    
+    // Taux de conversion ce mois vs mois dernier
+    const thisMonthAllOrders = orders.filter(o => {
+        const d = new Date(o.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+    });
+    const thisMonthCompleted = thisMonthAllOrders.filter(o => o.status === 'completed').length;
+    const thisMonthConversion = thisMonthAllOrders.length > 0 ? (thisMonthCompleted / thisMonthAllOrders.length * 100) : 0;
+    
+    const lastMonthAllOrders = orders.filter(o => {
+        const d = new Date(o.date);
+        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+    });
+    const lastMonthCompleted = lastMonthAllOrders.filter(o => o.status === 'completed').length;
+    const lastMonthConversion = lastMonthAllOrders.length > 0 ? (lastMonthCompleted / lastMonthAllOrders.length * 100) : 0;
+    
+    const conversionTrend = calcTrend(thisMonthConversion, lastMonthConversion);
+    
+    // Fonction pour calculer le pourcentage de variation
+    function calcTrend(current, previous) {
+        if (previous === 0) {
+            return current > 0 ? { value: '+100%', type: 'positive' } : { value: '0%', type: 'neutral' };
+        }
+        const percent = ((current - previous) / previous * 100).toFixed(1);
+        if (percent > 0) {
+            return { value: '+' + percent + '%', type: 'positive' };
+        } else if (percent < 0) {
+            return { value: percent + '%', type: 'negative' };
+        } else {
+            return { value: '0%', type: 'neutral' };
+        }
+    }
+    
+    const revenueTrend = calcTrend(thisMonthRevenue, lastMonthRevenue);
+    const usersTrend = calcTrend(thisMonthUsers, lastMonthUsers);
+    const ordersTrend = calcTrend(thisMonthOrdersCount, lastMonthOrdersCount);
+    
     const stats = [
-        { value: totalRevenue, label: 'Revenus (€)', trend: '+12.5%', trendType: 'positive', icon: '💶', color: 'blue' },
-        { value: users.length, label: 'Utilisateurs', trend: '+8.2%', trendType: 'positive', icon: '👥', color: 'green' },
-        { value: orders.length, label: 'Commandes', trend: '+5.1%', trendType: 'positive', icon: '🛒', color: 'orange' },
-        { value: 4.8, label: 'Note moyenne', trend: '+0.2', trendType: 'neutral', icon: '⭐', color: 'purple' }
+        { value: thisMonthRevenue, label: 'Revenus (€)', trend: revenueTrend.value, trendType: revenueTrend.type, icon: '💶', color: 'blue' },
+        { value: users.length, label: 'Utilisateurs', trend: usersTrend.value, trendType: usersTrend.type, icon: '👥', color: 'green' },
+        { value: orders.length, label: 'Commandes', trend: ordersTrend.value, trendType: ordersTrend.type, icon: '🛒', color: 'orange' },
+        { value: thisMonthConversion.toFixed(1), label: 'Taux conversion', trend: conversionTrend.value, trendType: conversionTrend.type, icon: '🎯', color: 'purple', isPercent: true }
     ];
     
     statsGrid.innerHTML = stats.map(stat => `
         <div class="stat-card">
             <div class="stat-icon ${stat.color}">${stat.icon}</div>
             <div class="stat-info">
-                <span class="stat-value" data-target="${stat.value}">0</span>
+                <span class="stat-value" data-target="${stat.value}">0</span>${stat.isPercent ? '<span class="stat-percent">%</span>' : ''}
                 <span class="stat-label">${stat.label}</span>
+                <span class="stat-trend-line"><span class="stat-trend ${stat.trendType}">${stat.trend}</span> vs mois dernier</span>
             </div>
-            <span class="stat-trend ${stat.trendType}">${stat.trend}</span>
         </div>
     `).join('');
 }
@@ -1601,6 +1703,10 @@ function initVisitorsChart() {
     const ctx = document.getElementById('visitorsChart');
     if (!ctx) return;
     
+    // Récupérer le filtre sélectionné
+    const filterSelect = document.getElementById('visitorsFilter');
+    const days = filterSelect ? parseInt(filterSelect.value) : 30;
+    
     if (visitorsChart) visitorsChart.destroy();
     
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1612,7 +1718,8 @@ function initVisitorsChart() {
     const labels = [];
     const data = [];
     
-    for (let i = 29; i >= 0; i--) {
+    // Générer les données pour le nombre de jours sélectionné
+    for (let i = days - 1; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
@@ -1679,6 +1786,16 @@ function initVisitorsChart() {
     });
     
     ctx.parentElement.style.height = '300px';
+    
+    // Ajouter l'événement sur le filtre
+    if (filterSelect) {
+        filterSelect.removeEventListener('change', handleFilterChange);
+        filterSelect.addEventListener('change', handleFilterChange);
+    }
+}
+
+function handleFilterChange() {
+    initVisitorsChart();
 }
 
 function initDevicesChart() {
@@ -2335,6 +2452,9 @@ function initSettingsPage() {
                 document.documentElement.removeAttribute('data-theme');
                 localStorage.setItem('dashboard-theme', 'light');
                 document.getElementById('themeToggle').textContent = '🌙';
+            } else if (theme === 'auto') {
+                localStorage.setItem('dashboard-theme', 'auto');
+                applyAutoTheme();
             }
         });
     });
@@ -2451,6 +2571,85 @@ function initSettingsPage() {
             }, 2000);
             
             showSettingsToast('Profil sauvegardé !');
+        });
+    }
+    // === NOTIFICATIONS ===
+    const notifToggle = document.getElementById('notifOrdersToggle');
+    if (notifToggle) {
+        // Charger l'état sauvegardé
+        const notifEnabled = localStorage.getItem('dashboard-notif-orders') !== 'false';
+        notifToggle.checked = notifEnabled;
+        
+        // Sauvegarder quand on change
+        notifToggle.addEventListener('change', () => {
+            localStorage.setItem('dashboard-notif-orders', notifToggle.checked);
+            if (notifToggle.checked) {
+                showSettingsToast('Notifications activées');
+            } else {
+                showSettingsToast('Notifications désactivées');
+            }
+        });
+    }
+    // === EXPORT DES DONNÉES ===
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    if (exportDataBtn) {
+        exportDataBtn.addEventListener('click', () => {
+            const data = {
+                orders: getData('orders') || [],
+                users: getData('users') || [],
+                products: getData('products') || [],
+                settings: getData('settings') || {},
+                exportDate: new Date().toISOString()
+            };
+            
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'dashboard-data-' + new Date().toISOString().split('T')[0] + '.json';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            showSettingsToast('Données exportées !');
+        });
+    }
+
+    // === IMPORT DES DONNÉES ===
+    const importDataInput = document.getElementById('importDataInput');
+    if (importDataInput) {
+        importDataInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    if (!confirm('⚠️ Cela va remplacer toutes vos données actuelles. Continuer ?')) {
+                        return;
+                    }
+                    
+                    // Restaurer les données
+                    if (data.orders) setData('orders', data.orders);
+                    if (data.users) setData('users', data.users);
+                    if (data.products) setData('products', data.products);
+                    if (data.settings) setData('settings', data.settings);
+                    
+                    showSettingsToast('Données importées !');
+                    
+                    // Recharger la page pour appliquer
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                    
+                } catch (error) {
+                    alert('Erreur : fichier JSON invalide');
+                }
+            };
+            reader.readAsText(file);
         });
     }
 }
@@ -2739,6 +2938,7 @@ function initOrderForm() {
         
         renderAdminOrders();
         updateStatsPreview();
+        refreshNotifications();
         showToast('Commande ajoutée !');
     });
 }
@@ -3052,20 +3252,39 @@ function showToast(message) {
 let notifications = [];
 
 function initNotifications() {
-    const orders = getData('orders') || [];
+    const notifEnabled = localStorage.getItem('dashboard-notif-orders') !== 'false';
     
-    notifications = orders.slice(0, 5).map((order, index) => ({
-        id: index + 1,
-        type: 'order',
-        icon: '✓',
-        text: `<strong>Commande ${order.id || '#' + (1000 + index)}</strong> de ${order.client} pour ${order.amount}€`,
-        time: 'Récemment',
-        unread: index < 3
-    }));
+    // Récupérer les IDs des notifications déjà lues
+    let readNotifications = [];
+    try {
+        readNotifications = JSON.parse(localStorage.getItem('dashboard-notif-read')) || [];
+    } catch(e) {
+        readNotifications = [];
+    }
     
-    if (notifications.length === 0) {
+    if (notifEnabled) {
+        const orders = getData('orders') || [];
+        
+        notifications = orders.slice(0, 5).map((order, index) => {
+            const notifId = order.id || '#' + (1000 + index);
+            return {
+                id: notifId,
+                type: 'order',
+                icon: '✓',
+                text: `<strong>Commande ${notifId}</strong> de ${order.client} pour ${order.amount}€`,
+                time: 'Récemment',
+                unread: !readNotifications.includes(notifId)
+            };
+        });
+        
+        if (notifications.length === 0) {
+            notifications = [
+                { id: 'welcome', type: 'info', icon: '👋', text: '<strong>Bienvenue !</strong> Ajoutez des commandes dans Admin', time: 'Maintenant', unread: !readNotifications.includes('welcome') }
+            ];
+        }
+    } else {
         notifications = [
-            { id: 1, type: 'info', icon: '👋', text: '<strong>Bienvenue !</strong> Ajoutez des commandes dans Admin', time: 'Maintenant', unread: true }
+            { id: 'disabled', type: 'info', icon: '🔕', text: '<strong>Notifications désactivées</strong><br>Activez-les dans Paramètres', time: '', unread: false }
         ];
     }
     
@@ -3088,11 +3307,56 @@ function initNotifications() {
     
     if (markAllBtn) {
         markAllBtn.addEventListener('click', () => {
+            // Marquer toutes comme lues
             notifications.forEach(n => { n.unread = false; });
+            
+            // Sauvegarder les IDs lues dans localStorage
+            const allIds = notifications.map(n => n.id);
+            localStorage.setItem('dashboard-notif-read', JSON.stringify(allIds));
+            
             renderNotifications();
             markAllBtn.textContent = '✓ Fait !';
             setTimeout(() => { markAllBtn.textContent = 'Tout marquer lu'; }, 1500);
         });
+    }
+    
+    renderNotifications();
+}
+
+function refreshNotifications() {
+    const notifEnabled = localStorage.getItem('dashboard-notif-orders') !== 'false';
+    
+    let readNotifications = [];
+    try {
+        readNotifications = JSON.parse(localStorage.getItem('dashboard-notif-read')) || [];
+    } catch(e) {
+        readNotifications = [];
+    }
+    
+    if (notifEnabled) {
+        const orders = getData('orders') || [];
+        
+        notifications = orders.slice(0, 5).map((order, index) => {
+            const notifId = order.id || '#' + (1000 + index);
+            return {
+                id: notifId,
+                type: 'order',
+                icon: '✓',
+                text: `<strong>Commande ${notifId}</strong> de ${order.client} pour ${order.amount}€`,
+                time: 'Récemment',
+                unread: !readNotifications.includes(notifId)
+            };
+        });
+        
+        if (notifications.length === 0) {
+            notifications = [
+                { id: 'welcome', type: 'info', icon: '👋', text: '<strong>Bienvenue !</strong> Ajoutez des commandes dans Admin', time: 'Maintenant', unread: !readNotifications.includes('welcome') }
+            ];
+        }
+    } else {
+        notifications = [
+            { id: 'disabled', type: 'info', icon: '🔕', text: '<strong>Notifications désactivées</strong><br>Activez-les dans Paramètres', time: '', unread: false }
+        ];
     }
     
     renderNotifications();
