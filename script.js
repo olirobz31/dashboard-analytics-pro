@@ -1290,7 +1290,7 @@ function initTrafficChart() {
 
 function initDataTable() {
     const orders = getData('orders');
-    filteredData = orders && orders.length > 0 ? [...orders] : [...CONFIG.orders];
+    filteredData = orders && orders.length > 0 ? [...orders] : [];
     currentPage = 1;
     
     renderTable();
@@ -1379,7 +1379,7 @@ function initTableSearch() {
     
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
-        const orders = getData('orders') || CONFIG.orders;
+        const orders = getData('orders') || [];
         
         filteredData = orders.filter(order =>
             (order.id && order.id.toLowerCase().includes(query)) ||
