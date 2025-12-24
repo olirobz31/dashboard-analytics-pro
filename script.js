@@ -88,11 +88,7 @@ function setData(key, data) {
 
 function initializeData() {
     if (!getData('products')) {
-        setData('products', [
-            { id: 1, name: 'Dashboard Starter', price: 49 },
-            { id: 2, name: 'Dashboard Pro', price: 99 },
-            { id: 3, name: 'Dashboard Business', price: 149 }
-        ]);
+        setData('products', []);
     }
     if (!getData('orders')) {
         setData('orders', []);
@@ -3217,8 +3213,14 @@ function loadDemoData() {
         { id: 5, name: 'Claire Moreau', email: 'claire@email.com', plan: 'business', status: 'active', date: lastMonth + '-20' }
     ];
     setData('users', demoUsers);
+    
+    const demoProducts = [
+        { id: 1, name: 'Dashboard Starter', price: 49 },
+        { id: 2, name: 'Dashboard Pro', price: 99 },
+        { id: 3, name: 'Dashboard Business', price: 149 }
+    ];
+    setData('products', demoProducts);
 }
-
 function updateStatsPreview() {
     const stats = calculateStats();
     
