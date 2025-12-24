@@ -581,15 +581,7 @@ const pages = {
                             <button class="color-option" style="background: #ef4444"></button>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Langue</label>
-                        <select class="form-input">
-                            <option selected>🇫🇷 Français</option>
-                            <option>🇬🇧 English</option>
-                            <option>🇪🇸 Español</option>
-                            <option>🇩🇪 Deutsch</option>
-                        </select>
-                    </div>
+             
                 </div>
             </section>
             <section class="settings-card">
@@ -2476,22 +2468,6 @@ function initSettingsPage() {
         });
     });
     
-    // === LANGUE ===
-    const langSelect = document.querySelector('.settings-card-body select.form-input');
-    if (langSelect) {
-        const savedLang = localStorage.getItem('dashboard-lang') || 'fr';
-        langSelect.value = savedLang === 'fr' ? '🇫🇷 Français' : 
-                          savedLang === 'en' ? '🇬🇧 English' : 
-                          savedLang === 'es' ? '🇪🇸 Español' : '🇩🇪 Deutsch';
-        
-        langSelect.addEventListener('change', () => {
-            const lang = langSelect.value.includes('Français') ? 'fr' :
-                        langSelect.value.includes('English') ? 'en' :
-                        langSelect.value.includes('Español') ? 'es' : 'de';
-            localStorage.setItem('dashboard-lang', lang);
-            showSettingsToast('Langue changée ! (Démo)');
-        });
-    }
     
     // === AVATAR ===
     const changeAvatarBtn = document.querySelector('.avatar-upload .secondary-btn');
