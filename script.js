@@ -137,16 +137,18 @@ function calculateStats() {
     };
 }
 
-function getMonthlyRevenue() {
+function getMonthlyRevenue(year) {
     const orders = getData('orders') || [];
     const monthlyData = Array(12).fill(0);
+    const targetYear = year || new Date().getFullYear();
     
     orders.forEach(order => {
         if (order.status === 'completed') {
             const date = new Date(order.date);
+            const orderYear = date.getFullYear();
             const month = date.getMonth();
             const amount = Number(order.amount);
-            if (!isNaN(amount) && !isNaN(month)) {
+            if (!isNaN(amount) && !isNaN(month) && orderYear === targetYear) {
                 monthlyData[month] += amount;
             }
         }
@@ -319,10 +321,10 @@ const pages = {
                 <div class="chart-card large">
                     <div class="chart-header">
                         <h3>Revenus mensuels</h3>
-                        <select class="chart-filter">
-                            <option>Cette année</option>
-                            <option>Année dernière</option>
-                        </select>
+                        <select class="chart-filter" id="revenueYearFilter">
+    <option value="this">Cette année</option>
+    <option value="last">Année dernière</option>
+</select>
                     </div>
                     <canvas id="revenueChart"></canvas>
                 </div>
@@ -1133,7 +1135,12 @@ function initRevenueChart() {
     gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
     gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
     
-    const monthlyData = getMonthlyRevenue();
+    // Récupérer l'année sélectionnée
+    const yearFilter = document.getElementById('revenueYearFilter');
+    const currentYear = new Date().getFullYear();
+    const selectedYear = yearFilter && yearFilter.value === 'last' ? currentYear - 1 : currentYear;
+    
+    const monthlyData = getMonthlyRevenue(selectedYear);
     
     revenueChart = new Chart(ctx, {
         type: 'line',
@@ -1194,6 +1201,15 @@ function initRevenueChart() {
     });
     
     ctx.parentElement.style.height = '300px';
+    
+    // Événement sur le filtre année
+    const yearFilterEl = document.getElementById('revenueYearFilter');
+    if (yearFilterEl && !yearFilterEl.hasListener) {
+        yearFilterEl.hasListener = true;
+        yearFilterEl.addEventListener('change', () => {
+            initRevenueChart();
+        });
+    }
 }
 
 // ============================================
