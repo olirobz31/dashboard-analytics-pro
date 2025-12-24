@@ -2214,7 +2214,7 @@ function renderRevenueStats() {
     });
     
     statsGrid.innerHTML = `
-        <div class="stat-card highlight">
+        <div class="stat-card">
             <div class="stat-icon blue">💶</div>
             <div class="stat-info">
                 <span class="stat-value">${monthlyRevenue.toLocaleString('fr-FR')} €</span>
